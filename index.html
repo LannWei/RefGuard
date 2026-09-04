@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RefGuard: Identity-Aware Language-Guided Robot Manipulation</title>
+<meta name="description" content="RefGuard grounds language instructions to physical objects by maintaining a joint posterior over the target, the anchor, and the reference frame, and executes, clarifies, reobserves, or aborts. Zero identity switches on a real UF850 stress suite.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="RefGuard: Identity-Aware Language-Guided Robot Manipulation via Joint Target-Anchor-Frame Grounding">
+<meta property="og:description" content="Joint target-anchor-frame grounding with late commitment: execute when the referent is certain, clarify, reobserve, or abort when it is not.">
+<!-- TODO after deployment: replace with the absolute URL of static/images/teaser.jpg -->
+<meta property="og:image" content="static/images/teaser.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f3fb5'/%3E%3Cpath d='M32 12l16 6v12c0 10-7 18-16 22-9-4-16-12-16-22V18z' fill='%23fff'/%3E%3Cpath d='M24 32l6 6 10-12' fill='none' stroke='%231f3fb5' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff; --bg-soft:#f5f7fb; --text:#0f172a; --body:#334155; --muted:#5b6478;
+    --accent:#1f3fb5; --accent-soft:#e8edfb; --red:#d24040; --red-soft:#fdecec;
+    --green:#3f8f3a; --green-soft:#e9f5e7; --teal:#2d7fb8; --teal-soft:#e6f1f9;
+    --border:#e5e8f0; --radius:18px; --shadow:0 10px 30px rgba(15,23,42,.08); --max:1120px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg);line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  img{max-width:100%;height:auto;display:block}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+
+  /* nav */
+  nav.top{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .navbar{display:flex;align-items:center;justify-content:space-between;height:60px}
+  .brand{display:inline-flex;align-items:center;gap:10px;font-weight:800;color:var(--text);font-size:17px;letter-spacing:-.01em}
+  .brand .mark{width:26px;height:26px;border-radius:7px;background:var(--accent);display:grid;place-items:center}
+  .brand .mark svg{width:16px;height:16px}
+  .nav-links{display:flex;gap:26px}
+  .nav-links a{color:var(--muted);font-weight:600;font-size:14px}
+  .nav-links a:hover{color:var(--accent)}
+
+  /* hero */
+  .hero{padding:72px 0 24px;text-align:center}
+  .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:13px;letter-spacing:.02em}
+  .hero h1{font-size:clamp(52px,9vw,92px);font-weight:800;letter-spacing:-.035em;margin:18px 0 10px;line-height:1}
+  .hero h1 span{color:var(--accent)}
+  .hero .subtitle{font-size:clamp(18px,2.4vw,25px);font-weight:600;max-width:860px;margin:0 auto 14px;color:#1f2937;line-height:1.35;letter-spacing:-.01em}
+  .hero .tagline{color:var(--muted);font-size:16px;max-width:720px;margin:0 auto 28px}
+  .authors{font-size:16px;max-width:840px;margin:0 auto;line-height:1.8}
+  .authors b{font-weight:600;white-space:nowrap}
+  .authors sup{color:var(--muted);font-size:.68em;margin-left:1px}
+  .affils{color:var(--muted);font-size:14px;margin:10px auto 0;max-width:780px;line-height:1.7}
+  .affils sup{font-size:.7em}
+  .btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:28px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:999px;border:1px solid var(--border);background:#fff;color:var(--text);font-weight:600;font-size:14.5px;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+  .btn.primary{background:var(--text);color:#fff;border-color:var(--text)}
+  .btn.primary:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.soon{opacity:.55;pointer-events:none}
+  .btn svg{width:17px;height:17px;flex:none}
+  .soon-tag{font-weight:500;color:inherit;opacity:.8}
+
+  /* video */
+  .video-section{padding:28px 0 8px}
+  .video-shell{position:relative;max-width:1000px;margin:0 auto;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);background:#0b1020;aspect-ratio:16/9}
+  .video-shell img{width:100%;height:100%;object-fit:cover}
+  .video-shell iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .play{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;background:linear-gradient(to top,rgba(5,10,30,.62),rgba(5,10,30,.12));cursor:pointer;transition:.2s}
+  .play:hover{background:linear-gradient(to top,rgba(5,10,30,.7),rgba(5,10,30,.2))}
+  .play.disabled{cursor:default}
+  .play .circle{width:82px;height:82px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 10px 30px rgba(0,0,0,.35);transition:.2s}
+  .play:not(.disabled):hover .circle{transform:scale(1.06)}
+  .play .circle svg{width:30px;height:30px;margin-left:4px;fill:var(--accent)}
+  .play-label{font-weight:700;font-size:16px;text-shadow:0 2px 10px rgba(0,0,0,.5);background:rgba(0,0,0,.35);padding:6px 14px;border-radius:999px;backdrop-filter:blur(4px)}
+  .video-note{text-align:center;color:var(--muted);font-size:14px;margin:14px auto 0;max-width:760px}
+
+  /* sections */
+  section{padding:64px 0;scroll-margin-top:70px}
+  section.alt{background:var(--bg-soft);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .eyebrow{color:var(--accent);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.12em}
+  section h2{font-size:clamp(28px,4vw,40px);letter-spacing:-.025em;margin:8px 0 14px;line-height:1.15}
+  section h3.sub{font-size:22px;letter-spacing:-.015em;margin:44px 0 8px}
+  .lead{font-size:17px;color:var(--body);max-width:840px;margin:0}
+  p{color:var(--body)}
+  figure{margin:28px 0 0}
+  figure.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+  figure img{border-radius:10px;cursor:zoom-in;width:100%}
+  figcaption{font-size:14px;color:var(--muted);margin:12px 6px 2px;line-height:1.55}
+  .grid{display:grid;gap:16px;margin-top:26px}
+  .grid.c2{grid-template-columns:repeat(2,1fr)}
+  .grid.c3{grid-template-columns:repeat(3,1fr)}
+  .grid.c4{grid-template-columns:repeat(4,1fr)}
+  .card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+  .card h4{margin:0 0 8px;font-size:16.5px;letter-spacing:-.01em}
+  .card p{margin:0;font-size:14.5px;color:#475569;line-height:1.6}
+  .card .num{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:14px;margin-bottom:12px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.02em;margin-bottom:10px}
+  .badge.t{background:var(--accent-soft);color:var(--accent)}
+  .badge.a{background:var(--red-soft);color:var(--red)}
+  .badge.f{background:var(--green-soft);color:var(--green)}
+  .badge.g{background:#eef0f4;color:#475569}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:30px}
+  .stat{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:22px 20px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .stat .value{font-size:36px;font-weight:800;letter-spacing:-.03em;color:var(--accent);line-height:1.05}
+  .stat .value small{font-size:16px;font-weight:700;color:var(--muted);letter-spacing:0;margin-left:4px}
+  .stat .label{font-size:13.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+  /* decisions */
+  .decisions{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
+  .dec{border-radius:14px;padding:16px 18px;border:1px solid var(--border);background:#fff}
+  .dec b{display:flex;align-items:center;gap:9px;font-size:15px;margin-bottom:6px;font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;letter-spacing:.02em;text-transform:uppercase}
+  .dec .dot{width:11px;height:11px;border-radius:50%;flex:none}
+  .dec p{margin:0;font-size:13.5px;color:#475569}
+
+  /* table */
+  .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:#fff;margin-top:24px;box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+  th,td{padding:12px 14px;text-align:center;border-bottom:1px solid var(--border);vertical-align:middle}
+  th{background:var(--bg-soft);font-weight:700;font-size:13px;color:var(--text)}
+  th small,td small{display:block;color:var(--muted);font-weight:500;font-size:12px;margin-top:2px}
+  td:first-child,th:first-child{text-align:left;font-weight:600}
+  tbody tr:last-child td{border-bottom:0}
+  tr.ours td{background:#f0f5ff;color:var(--accent);font-weight:700}
+  tr.ours td small{color:var(--accent);opacity:.75}
+  .table-note{font-size:13.5px;color:var(--muted);margin:10px 4px 0}
+
+  /* callout */
+  .callout{margin-top:26px;border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 14px 14px 0;padding:16px 20px;color:#1e293b;font-size:15px}
+  .callout b{color:var(--accent)}
+
+  /* bibtex */
+  .bib{position:relative;margin-top:22px}
+  pre{background:#0f172a;color:#e2e8f0;border-radius:var(--radius);padding:22px 24px;overflow-x:auto;font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.65;margin:0}
+  .copy{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+  .copy:hover{background:rgba(255,255,255,.2)}
+
+  footer{border-top:1px solid var(--border);padding:34px 0 44px;color:var(--muted);font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+  /* lightbox */
+  .lightbox{position:fixed;inset:0;z-index:100;background:rgba(10,14,30,.9);display:none;align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:min(96vw,1800px);max-height:92vh;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.5);cursor:zoom-out;width:auto}
+
+  @media (max-width:900px){
+    .stats,.grid.c4,.decisions{grid-template-columns:repeat(2,1fr)}
+    .grid.c3{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:600px){
+    .stats,.grid.c4,.grid.c3,.grid.c2,.decisions{grid-template-columns:1fr}
+    .nav-links{display:none}
+    .hero{padding-top:48px}
+    section{padding:48px 0}
+    figure.card{padding:8px}
+  }
+</style>
+</head>
+<body id="top">
+
+<nav class="top">
+  <div class="wrap navbar">
+    <a href="#top" class="brand">
+      <span class="mark"><svg viewBox="0 0 64 64" fill="none"><path d="M32 12l16 6v12c0 10-7 18-16 22-9-4-16-12-16-22V18z" fill="#fff"/><path d="M24 32l6 6 10-12" stroke="#1f3fb5" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      RefGuard
+    </a>
+    <div class="nav-links">
+      <a href="#video">Video</a>
+      <a href="#problem">Problem</a>
+      <a href="#method">Method</a>
+      <a href="#results">Results</a>
+      <a href="#bibtex">BibTeX</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="pill">Preprint · 2026</span>
+    <h1><span>Ref</span>Guard</h1>
+    <div class="subtitle">Identity-Aware Language-Guided Robot Manipulation via Joint Target–Anchor–Frame Grounding</div>
+    <p class="tagline">Late commitment for language-guided manipulation: execute when the referent is certain, and clarify, reobserve, or abort when it is not.</p>
+
+    <div class="authors">
+      <b>Lan Wei</b><sup>1</sup>, <b>Kangyi Lu</b><sup>1</sup>, <b>Yongchen Wang</b><sup>1</sup>, <b>Chenmeng Bi</b><sup>1</sup>, <b>Qi Chen</b><sup>1</sup>,
+      <b>Hanlin Niu</b><sup>2,3</sup>, <b>Yip Fun Yeung</b><sup>4</sup>, <b>Dandan Zhang</b><sup>1&#8239;✉</sup>
+    </div>
+    <div class="affils">
+      <sup>1</sup>Imperial College London &nbsp;·&nbsp; <sup>2</sup>RACE, United Kingdom Atomic Energy Authority &nbsp;·&nbsp;
+      <sup>3</sup>Oxford Robotics Institute, University of Oxford &nbsp;·&nbsp; <sup>4</sup>Avant Intelligence Ltd
+    </div>
+
+    <div class="btns">
+      <a class="btn primary" data-link="arxiv" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+        Paper <span class="soon-tag" hidden>· coming soon</span>
+      </a>
+      <a class="btn" data-link="github" href="#">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.68.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+        Code <span class="soon-tag" hidden>· coming soon</span>
+      </a>
+      <a class="btn" data-link="youtube" href="#">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.6 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg>
+        Video <span class="soon-tag" hidden>· coming soon</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<section id="video" class="video-section">
+  <div class="wrap">
+    <div class="video-shell" id="video-shell">
+      <img src="static/images/video_poster.jpg" alt="Real-robot comparison of π0.5, GR00T, an LLM-based pipeline, and RefGuard on a duplicate-anchor instruction">
+      <div class="play" id="video-play" role="button" tabindex="0" aria-label="Play video">
+        <div class="circle"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+        <div class="play-label" id="play-label">Watch the video</div>
+      </div>
+    </div>
+    <p class="video-note">Overview and real-robot demonstrations on a UF850 arm: duplicate targets, duplicate anchors, and reference-frame ambiguity, compared against π<sub>0.5</sub>, GR00T, and an LLM-based pipeline.</p>
+  </div>
+</section>
+
+<section id="overview">
+  <div class="wrap">
+    <span class="eyebrow">Overview</span>
+    <h2>Which object did you mean?</h2>
+    <p class="lead">
+      Vision-language-action models have substantially advanced language-guided robot manipulation, yet reliable execution still hinges on identifying <em>which</em> physical object an instruction refers to.
+      In cluttered scenes containing repeated objects, ambiguous anchors, or frame-dependent spatial terms, a robot can execute a geometrically valid action on a semantically compatible but unintended instance. We call this failure an <b>identity switch</b>.
+    </p>
+    <p class="lead" style="margin-top:14px">
+      The referent is jointly determined by three coupled latent variables, the <b>target</b>, the <b>anchor</b>, and the <b>reference frame</b>, so committing to any one of them before execution turns residual ambiguity into a silent and irreversible error.
+      RefGuard delays commitment by maintaining a joint posterior over all three variables. It builds a frame-conditioned object-centric scene graph from RGB-D observations and routes the posterior through a decision policy that <b>executes</b>, <b>clarifies</b>, <b>reobserves</b>, or <b>aborts</b>.
+    </p>
+
+    <div class="stats">
+      <div class="stat"><div class="value">0<small>/ 90</small></div><div class="label">identity switches on ambiguity-stress trials (S2–S4). Fine-tuned VLA and LLM-based baselines: 30–41 of 90.</div></div>
+      <div class="stat"><div class="value">90.0<small>%</small></div><div class="label">correct execution on the same 90 trials (81 correct, 3 low-level failures, 6 deferrals).</div></div>
+      <div class="stat"><div class="value">93.3<small>%</small></div><div class="label">task success on clean, unambiguous scenes (S1), the best of all methods. Safety does not come from refusing to act.</div></div>
+      <div class="stat"><div class="value">86.7<small>%</small></div><div class="label">recovery when objects are swapped, moved, or inserted after grounding (S5), versus 0–47% for the baselines.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="problem" class="alt">
+  <div class="wrap">
+    <span class="eyebrow">The problem</span>
+    <h2>Identity switches: confident, valid, and wrong</h2>
+    <p class="lead">
+      For "pick the bell pepper to the right of the can and place it into the bowl near the cup", the referent depends on a chain of coupled choices: which pepper, which can, which bowl, and whether "right" is read in the user's or the robot's frame.
+      Existing VLA policies, LLM-driven pipelines, and VLM grounders commit early: they pick a single most likely target, anchor, and frame, or fold the choice implicitly into predicted actions. In cluttered scenes this collapses residual ambiguity before execution, and the action is carried out with no record that its referent was uncertain.
+    </p>
+
+    <div class="grid c3">
+      <div class="card"><span class="badge t">Target</span><h4>Which pepper?</h4><p>Duplicate or visually similar instances match the same category and attributes. Detection and tracking preserve assigned identities but do not decide which identity the language intended.</p></div>
+      <div class="card"><span class="badge a">Anchor</span><h4>Which can?</h4><p>When the anchor is also duplicated, it cannot be identified in isolation. Fixing the anchor first and then searching for the target is exactly the early commitment that produces wrong-instance executions.</p></div>
+      <div class="card"><span class="badge f">Frame</span><h4>Whose left?</h4><p>Directional terms such as "left" or "in front of" change meaning between the robot frame and the user's viewpoint, so the same target–anchor pair can imply different physical goals.</p></div>
+    </div>
+
+    <figure class="card">
+      <img src="static/images/teaser.jpg" alt="Teaser: identity switches in cluttered tabletop manipulation and the RefGuard decision module" loading="lazy">
+      <figcaption>In cluttered tabletop manipulation, identity switches arise when ambiguity over the target, anchor, or reference frame is collapsed into hard choices before execution. RefGuard models these variables jointly, preserves their uncertainty, and routes the posterior through a decision module that chooses to execute, clarify, reobserve, or abort.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="method">
+  <div class="wrap">
+    <span class="eyebrow">Method</span>
+    <h2>Joint target–anchor–frame grounding with late commitment</h2>
+    <p class="lead">
+      RefGuard reformulates identity preservation as joint posterior inference over the target, the anchor, and the reference frame, replacing a top-1 referent with late commitment at the grounding-to-action interface.
+      Learned LLM/VLM grounders remain complementary: they can supply interpretations or hypothesis scores, while RefGuard preserves joint uncertainty over the physical instances and verifies it before execution.
+    </p>
+
+    <figure class="card">
+      <img src="static/images/method.jpg" alt="RefGuard framework overview: language decomposition, SAM 3 perception, frame-conditioned scene graph, joint hypothesis table, and decision module" loading="lazy">
+      <figcaption>A language model decomposes the instruction into symbolic primitive queries over target, anchor, and relation, while SAM 3 perception builds a frame-conditioned scene graph from RGB-D observations. A joint hypothesis table scores candidate target–anchor–frame interpretations, and execution is committed only when the target belief is sufficiently concentrated for a safe action; otherwise the system clarifies, reobserves, or aborts. The scene graph is rebuilt after each primitive.</figcaption>
+    </figure>
+
+    <div class="grid c4">
+      <div class="card"><div class="num">1</div><h4>Language → primitive queries</h4><p>GPT-4o decomposes the instruction into an ordered sequence of pick/place primitives, each with a target phrase, anchor phrases with relations, a reference-frame cue, and action constraints. The parser never binds phrases to detected instances.</p></div>
+      <div class="card"><div class="num">2</div><h4>Frame-conditioned scene graph</h4><p>From an external and a wrist RGB-D camera, SAM 3 perception yields object nodes with geometry, semantics, and uncertainty. A frame-independent layer stores distance, contact, and containment; a frame-conditioned layer stores directional offsets under each candidate frame.</p></div>
+      <div class="card"><div class="num">3</div><h4>Joint hypothesis table</h4><p>Each row is one complete interpretation (target, every anchor, frame), scored by object evidence, relation evidence, a frame prior, and action feasibility. Invalid rows are pruned, weights are normalised, and a target belief is obtained by marginalising over rows.</p></div>
+      <div class="card"><div class="num">4</div><h4>Posterior-aware planning</h4><p>Execution commits the target but keeps high-weight anchor and frame hypotheses for placement. A pre-execution contract check verifies visibility, poses, and feasibility before any motion, and the graph is rebuilt after each primitive so the next referent is re-grounded.</p></div>
+    </div>
+
+    <h3 class="sub">Posterior-to-decision policy</h3>
+    <p class="lead">The target marginal, its top-two margin, its entropy, and an action-equivalence test over the top hypotheses are mapped to one of four decisions. Thresholds were selected on 30 development episodes and then frozen.</p>
+    <div class="decisions">
+      <div class="dec"><b><span class="dot" style="background:var(--green)"></span>Execute</b><p>Belief concentrates on a single feasible interpretation and the planner finds a safe action.</p></div>
+      <div class="dec"><b><span class="dot" style="background:#e07a1f"></span>Clarify</b><p>Top hypotheses disagree on target identity, anchor assignment, or frame, and the disagreement implies different physical goals.</p></div>
+      <div class="dec"><b><span class="dot" style="background:var(--teal)"></span>Reobserve</b><p>Belief is too flat, perception is weak, or poses are stale. The scene is re-captured and the query re-grounded.</p></div>
+      <div class="dec"><b><span class="dot" style="background:var(--red)"></span>Abort</b><p>No compatible target, anchor, or satisfiable action constraint remains under any available frame.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="suite" class="alt">
+  <div class="wrap">
+    <span class="eyebrow">Evaluation</span>
+    <h2>Identity-switch stress suite on a real UF850 arm</h2>
+    <p class="lead">
+      Six settings separate ordinary manipulation ability from identity-aware grounding. The first contains no ambiguity; the others progressively introduce duplicate targets, duplicate anchors, explicit frame cues, execution-time perturbations, and irreducibly ambiguous instructions where the correct behaviour is to defer.
+    </p>
+
+    <figure class="card">
+      <img src="static/images/stress_suite.jpg" alt="The six settings of the identity-switch stress suite" loading="lazy">
+      <figcaption>S1 tests ordinary unambiguous execution, and S2 tests duplicate targets with a unique anchor. S3 contains duplicate targets and duplicate anchors, requiring joint target–anchor reasoning; geometrically near-tied assignments trigger clarification. S4 tests explicit frame-conditioned grounding. S5 tests robustness under execution-time perturbation. S6 is an ambiguous hard negative, where the correct behaviour is to defer rather than execute an arbitrary action.</figcaption>
+    </figure>
+
+    <div class="grid c3">
+      <div class="card"><span class="badge g">S1 · Clean</span><h4>No ambiguity</h4><p>"Pick the lemon." A single referent; measures task success and checks that the decision mechanism does not slow ordinary execution.</p></div>
+      <div class="card"><span class="badge t">S2 · Duplicate target</span><h4>Resolve T with a unique anchor</h4><p>"Pick the lemon near the cup." Two lemons, one cup. The relation to the unique anchor must decide the target.</p></div>
+      <div class="card"><span class="badge a">S3 · Duplicate target &amp; anchor</span><h4>Joint target–anchor reasoning</h4><p>"Pick the lemon near the can." Two lemons and two cans; exactly one joint assignment satisfies the relation measured from RGB-D geometry.</p></div>
+      <div class="card"><span class="badge f">S4 · Frame-conditioned</span><h4>Honour the stated frame</h4><p>"Pick the lemon left of the bowl from the camera view." The robot and camera frames imply different instances; ignoring the cue acts on the wrong one.</p></div>
+      <div class="card"><span class="badge g">S5 · Perturbation</span><h4>Scene changes after grounding</h4><p>Targets are swapped, anchors moved, or distractors inserted after grounding. The pre-execution check must catch the change and re-ground.</p></div>
+      <div class="card"><span class="badge g">S6 · Hard negative</span><h4>No unique target</h4><p>"Pick the lemon" with two identical lemons. The correct behaviour is to clarify or abort, never to execute an arbitrary choice.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="results">
+  <div class="wrap">
+    <span class="eyebrow">Results</span>
+    <h2>Zero identity switches, without giving up ordinary success</h2>
+    <p class="lead">
+      We compare RefGuard with two VLA policies fine-tuned on 300 UF850 teleoperation demonstrations, GR00T and π<sub>0.5</sub>, and with an LLM-based pipeline that shares RefGuard's perception and planner but commits to a single target before planning. 30 trials per method and setting.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>S1 Clean<small>Task success ↑</small></th>
+            <th>S2 Dup-T<small>Identity-switch rate ↓</small></th>
+            <th>S3 Dup-T/A<small>Identity-switch rate ↓</small></th>
+            <th>S4 Frame-cond.<small>Identity-switch rate ↓</small></th>
+            <th>S5 Perturb<small>Recovery ↑</small></th>
+            <th>S6 Hard-neg.<small>Correct defer ↑</small></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>GR00T</td><td>83.3%<small>25/30</small></td><td>52.0%<small>13/25</small></td><td>40.0%<small>10/25</small></td><td>28.0%<small>7/25</small></td><td>40.0%<small>12/30</small></td><td>N/A</td></tr>
+          <tr><td>π<sub>0.5</sub></td><td>90.0%<small>27/30</small></td><td>42.3%<small>11/26</small></td><td>36.0%<small>9/25</small></td><td>59.3%<small>16/27</small></td><td>46.7%<small>14/30</small></td><td>N/A</td></tr>
+          <tr><td>LLM-based</td><td>90.0%<small>27/30</small></td><td>41.4%<small>12/29</small></td><td>44.4%<small>12/27</small></td><td>56.7%<small>17/30</small></td><td>0.0%<small>0/30</small></td><td>N/A</td></tr>
+          <tr class="ours"><td>RefGuard (Ours)</td><td>93.3%<small>28/30</small></td><td>0.0%<small>0/28</small></td><td>0.0%<small>0/27</small></td><td>0.0%<small>0/26</small></td><td>86.7%<small>26/30</small></td><td>100.0%<small>30/30</small></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">The identity-switch rate for S2–S4 is execution-conditional (switches over executed trials), so its denominator differs across cells. The baselines expose no explicit defer decision, hence N/A on S6.</p>
+
+    <figure class="card">
+      <img src="static/images/outcomes.jpg" alt="Outcome decomposition over S2–S4: pie charts for GR00T, π0.5, LLM-based, and RefGuard" loading="lazy">
+      <figcaption>Outcome decomposition over S2–S4 (N = 90 trials per method). Episodes are categorised as correct execution / identity switch / low-level failure / defer: GR00T 45/30/15/0, π<sub>0.5</sub> 42/36/12/0, LLM-based 45/41/4/0, and RefGuard 81/0/3/6. RefGuard's gain is not obtained by shifting errors into deferrals.</figcaption>
+    </figure>
+
+    <div class="callout">
+      <b>Matched controls.</b> An ablation that shares everything with RefGuard but commits to the anchor and frame before the target (Hard-A/F) reaches 19/30 correct with 4 identity switches on S2–S4, against 26/30 and none for RefGuard, and it also defers more often. Giving the LLM pipeline and Hard-A/F the same post-change observation in S5 lifts their recovery to 22/30 and 23/30, yet they still switch identity in 5/27 and 3/26 executions. Reobserving is necessary but not sufficient: the advantage comes from preserving joint uncertainty, not from abstention or scene-update access.
+    </div>
+
+    <h3 class="sub">Sequential composition and generalisation</h3>
+    <p class="lead">Over 30 instructions with 2 to 6 primitives, RefGuard reobserves and re-grounds after every step. It completes 114/120 primitives and 25/30 full sequences with 0/120 identity switches and 3/120 deferrals. On two held-out object categories it completes 68/72 primitives with no identity switch. At 30 post-action checkpoints where the next referent must be re-bound after the scene has changed, it re-grounds correctly in 28/30 cases, versus 10/30 for a control that locks the initial binding.</p>
+  </div>
+</section>
+
+<section id="scale" class="alt">
+  <div class="wrap">
+    <span class="eyebrow">Scaling to clutter</span>
+    <h2>3,200 procedural episodes</h2>
+    <p class="lead">
+      A development-disjoint, LIBERO-style procedural suite with 20 object categories and 5 to 20 objects per scene (2,400 solvable and 800 hard-negative episodes) tests whether the matched-control gap persists as clutter grows. RefGuard and Hard-A/F receive identical observations and the same four-way decision interface.
+    </p>
+
+    <figure class="card">
+      <img src="static/images/libero.jpg" alt="Procedurally generated scenes with 5, 10, 15, and 20 objects" loading="lazy">
+      <figcaption>Example scenes from the procedural suite as clutter increases from 5 to 20 objects. These scenes are procedurally generated and are not the official LIBERO benchmark.</figcaption>
+    </figure>
+
+    <div class="stats">
+      <div class="stat"><div class="value">80.5<small>% vs 56.6%</small></div><div class="label">correct execution on 2,400 solvable episodes, RefGuard vs. the early-commitment ablation.</div></div>
+      <div class="stat"><div class="value">19.5<small>% vs 43.4%</small></div><div class="label">deferral rate on solvable episodes. Joint inference defers less, not more.</div></div>
+      <div class="stat"><div class="value">73.7<small>% vs 51.0%</small></div><div class="label">correct execution at 20 objects per scene, the heaviest clutter level.</div></div>
+      <div class="stat"><div class="value">100<small>% vs 77.8%</small></div><div class="label">safe deferral on 800 hard-negative episodes with no valid interpretation.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="bibtex">
+  <div class="wrap">
+    <span class="eyebrow">Citation</span>
+    <h2>BibTeX</h2>
+    <div class="bib">
+      <button class="copy" id="copy-bib" type="button">Copy</button>
+<pre id="bib-text">@article{wei2026refguard,
+  title   = {RefGuard: Identity-Aware Language-Guided Robot Manipulation via Joint Target-Anchor-Frame Grounding},
+  author  = {Wei, Lan and Lu, Kangyi and Wang, Yongchen and Bi, Chenmeng and Chen, Qi and Niu, Hanlin and Yeung, Yip Fun and Zhang, Dandan},
+  journal = {arXiv preprint},
+  year    = {2026}
+}</pre>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>Contact: <a href="mailto:l.wei24@imperial.ac.uk">l.wei24@imperial.ac.uk</a> · <a href="mailto:d.zhang17@imperial.ac.uk">d.zhang17@imperial.ac.uk</a></div>
+    <div>© 2026 Imperial College London</div>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" aria-hidden="true"><img id="lightbox-img" alt=""></div>
+
+<script>
+  // ============================================================
+  //  Fill these in. Empty values are shown as "coming soon".
+  // ============================================================
+  const LINKS = {
+    arxiv:     "",   // e.g. "https://arxiv.org/abs/2609.xxxxx"
+    github:    "",   // e.g. "https://github.com/<user>/RefGuard"
+    youtubeId: "sOgxPlAutEQ",   // https://youtu.be/sOgxPlAutEQ
+  };
+  // ============================================================
+
+  // Buttons
+  document.querySelectorAll('[data-link]').forEach(a => {
+    const key = a.dataset.link;
+    const url = key === 'youtube' ? (LINKS.youtubeId ? 'https://youtu.be/' + LINKS.youtubeId : '') : LINKS[key];
+    if (url) {
+      a.href = url; a.target = '_blank'; a.rel = 'noopener';
+    } else {
+      a.classList.add('soon');
+      const tag = a.querySelector('.soon-tag'); if (tag) tag.hidden = false;
+      a.addEventListener('click', e => e.preventDefault());
+    }
+  });
+
+  // Video (poster first, iframe loads on click)
+  const shell = document.getElementById('video-shell');
+  const play  = document.getElementById('video-play');
+  if (LINKS.youtubeId) {
+    const start = () => {
+      const f = document.createElement('iframe');
+      f.src = 'https://www.youtube-nocookie.com/embed/' + LINKS.youtubeId + '?autoplay=1&rel=0';
+      f.title = 'RefGuard video';
+      f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      f.allowFullscreen = true;
+      shell.innerHTML = ''; shell.appendChild(f);
+    };
+    play.addEventListener('click', start);
+    play.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); start(); } });
+  } else {
+    document.getElementById('play-label').textContent = 'Video coming soon on YouTube';
+    play.classList.add('disabled');
+  }
+
+  // Lightbox for figures
+  const lb = document.getElementById('lightbox'), lbImg = document.getElementById('lightbox-img');
+  document.querySelectorAll('figure img').forEach(img => {
+    img.addEventListener('click', () => { lbImg.src = img.src; lbImg.alt = img.alt; lb.classList.add('open'); lb.setAttribute('aria-hidden', 'false'); });
+  });
+  const closeLb = () => { lb.classList.remove('open'); lb.setAttribute('aria-hidden', 'true'); lbImg.src = ''; };
+  lb.addEventListener('click', closeLb);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLb(); });
+
+  // Copy BibTeX
+  document.getElementById('copy-bib').addEventListener('click', async function () {
+    try {
+      await navigator.clipboard.writeText(document.getElementById('bib-text').textContent);
+      this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 1600);
+    } catch (e) { this.textContent = 'Select & copy'; }
+  });
+</script>
+</body>
+</html>
